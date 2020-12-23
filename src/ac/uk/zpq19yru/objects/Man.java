@@ -22,6 +22,7 @@ public class Man {
     private final HashMap<Integer, Double> data = new HashMap<>();
     private String grade;
     private Grade paygrade;
+    private int radiusEntries;
 
     /**
      * Constructor to initialise a Man Object.
@@ -42,6 +43,14 @@ public class Man {
         return last;
     }
 
+    public void setGrade(String grade) {
+        this.grade = grade;
+    }
+
+    public String getGrade() {
+        return grade;
+    }
+
     /**
      * Get a result of "Callum Johnson" as a string from Last and First Name variables.
      *
@@ -60,6 +69,9 @@ public class Man {
     public void addData(int colIndex, double value) {
         double current = data.getOrDefault(colIndex, 0.0);
         data.put(colIndex, current+value);
+        if (colIndex == 27) {
+            radiusEntries++;
+        }
     }
 
     /**
@@ -69,6 +81,9 @@ public class Man {
      * @return - Value or -1 if not found.
      */
     public double getData(int index) {
+        if (index == 27) {
+            return data.getOrDefault(index, -1.0)/radiusEntries;
+        }
         return data.getOrDefault(index, -1.0);
     }
 
@@ -90,14 +105,6 @@ public class Man {
         }
     }
 
-    public void setGrade(String grade) {
-        this.grade = grade;
-    }
-
-    public String getGrade() {
-        return grade;
-    }
-
     /**
      * Set the Workers' Paygrade (based off of grade)
      *
@@ -117,26 +124,36 @@ public class Man {
      */
     public double getPayGrade(int index, double value, boolean finalResult) {
         switch (index) {
-            case 12:
+            case 12: // Daily
                 return finalResult ? paygrade.getDaily()*value : paygrade.getDaily();
-            case 13:
-                return finalResult ? paygrade.getBonus()*value : paygrade.getBonus();
+            case 13: // Bonus
+                return 0;
             case 15: // Travel Hours
+                return finalResult ? getRoundOff(value*paygrade.getTravel()) : paygrade.getTravel();
             case 27: // Radius Hours
-                double eightpointthreethree = value + per(8.33, value);
-                double rate = eightpointthreethree + per(13.8, eightpointthreethree);
-                double roundOff = Math.round(rate * 100.0) / 100.0;
-                return finalResult ? roundOff : 0;
-            case 17:
+                return finalResult ? getRoundOff(value*radiusEntries) : value*radiusEntries;
+            case 17: // Nights
                 return finalResult ? paygrade.getNights()*value : paygrade.getNights();
-            case 32:
+            case 32: // OTB/OT2
                 return finalResult ? paygrade.getOtb()*value : paygrade.getOtb();
-            case 37:
+            case 37: // OTA/OT1
                 return finalResult ? paygrade.getOta()*value : paygrade.getOta();
             default:
-                break;
+                return 0;
         }
-        return 0;
+    }
+
+    /**
+     * Helper method to round-off and calculate a value of a given variable.
+     * This method adds NI and other fees onto the value.
+     *
+     * @param value - Value to be Rounded / Adjusted.
+     * @return - final value.
+     */
+    private double getRoundOff(double value) {
+        double eightpointthreethree = value + per(8.33, value);
+        double rate = eightpointthreethree + per(13.8, eightpointthreethree);
+        return Math.round(rate * 100.0) / 100.0;
     }
 
     /**

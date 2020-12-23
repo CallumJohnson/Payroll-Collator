@@ -270,7 +270,13 @@ public class PayrollCollator {
         }
     }
 
-    public void outputData() throws WorkbookNotValidException, IllegalArgumentException, IOException {
+    /**
+     * Method to output all of the Data into the Output workbook.
+     *
+     * @throws WorkbookNotValidException - Thrown if the workbook isn't valid.
+     * @throws IllegalArgumentException - Thrown if an argument for the output methods is incorrect.
+     */
+    public void outputData() throws WorkbookNotValidException, IllegalArgumentException {
         document = new ExcelDocument(outputBook, outputFile.getName());
         ExcelSheet summary = document.createSheet("Summary");
         boolean headersSet = false;
@@ -284,11 +290,12 @@ public class PayrollCollator {
         ));
 
         int index = 1;
+        int hoursIndex = 0, expensesIndex = 0, columnIndex = 0;
         try {
             for (Man man : men) {
-                int columnIndex = 0;
-                int hoursIndex = 0, expensesIndex = 0;
-
+                columnIndex=0;
+                hoursIndex=0;
+                expensesIndex=0;
                 if (!headersSet) {
                     summary.setCell(0, columnIndex++, "Last Name", CellType.STRING, true);
                     hours.setCell(0, hoursIndex++, "Last Name", CellType.STRING, true);
@@ -366,9 +373,39 @@ public class PayrollCollator {
                         expensesIndex++;
                     }
                 }
-
-                index+=3;
+                index+=2;
+                summary.setCell(
+                        index, columnIndex,
+                        getFormula(columnIndex, index, hoursRequired.size(), expensesRequired.size(), 1),
+                        CellType.FORMULA, true
+                );
+                hours.setCell(
+                        index, hoursIndex,
+                        getFormula(hoursIndex, index, hoursRequired.size(), expensesRequired.size(), 2),
+                        CellType.FORMULA, true
+                );
+                expenses.setCell(
+                        index, expensesIndex,
+                        getFormula(expensesIndex, index, hoursRequired.size(), expensesRequired.size(), 3),
+                        CellType.FORMULA, true
+                );
+                index++;
             }
+            summary.setCell(
+                    index, columnIndex,
+                    getFormula(columnIndex, index, 0,0, 10),
+                    CellType.FORMULA, true
+            );
+            hours.setCell(
+                    index, hoursIndex,
+                    getFormula(hoursIndex, index, 0,0, 11),
+                    CellType.FORMULA, true
+            );
+            expenses.setCell(
+                    index, expensesIndex,
+                    getFormula(expensesIndex, index, 0,0, 12),
+                    CellType.FORMULA, true
+            );
         } catch (Exception ex) {
             System.err.println("Failed to create pages.");
             System.err.println(ex.getClass().getSimpleName() + " has been encountered!");
@@ -387,6 +424,66 @@ public class PayrollCollator {
         }
     }
 
+    /**
+     * Returns a formula to total/sum cells based on location.
+     *
+     * @param column - Current column.
+     * @param row - Current row.
+     * @param hoursR - Amount of Hours Cells.
+     * @param expensesR - Amount of Expenses Cells.
+     * @param page - Page (determines what page you want to return a forumla for).
+     * @return - SUM(A1:A2) (example)
+     */
+    private String getFormula(int column, int row, int hoursR, int expensesR, int page) {
+        String formula = "SUM(%BEGIN%:%END%)";
+        String begin, last;
+        switch (page) {
+            case 1:
+                begin = convertToCell(column-hoursR-expensesR) + (row+1);
+                last = convertToCell(column-1) + (row+1);
+                return formula.replaceAll("%BEGIN%", begin).replaceAll("%END%", last);
+            case 2:
+                begin = convertToCell(column-hoursR) + (row+1);
+                last = convertToCell(column-1) + (row+1);
+                return formula.replaceAll("%BEGIN%", begin).replaceAll("%END%", last);
+            case 3:
+                begin = convertToCell(column-expensesR) + (row+1);
+                last = convertToCell(column-1) + (row+1);
+                return formula.replaceAll("%BEGIN%", begin).replaceAll("%END%", last);
+            case 10:
+            case 11:
+            case 12:
+                begin = convertToCell(column) + row;
+                last = convertToCell(column) + 2;
+                return formula.replaceAll("%BEGIN%", begin).replaceAll("%END%", last);
+            default:
+                return formula;
+        }
+    }
+
+    /**
+     * Return a Cell Index (A->Z) from an integer.
+     *
+     * @param index - Integer to convert to A-Z
+     * @return - A-Z
+     */
+    private String convertToCell(int index) {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        int bigChar = -1;
+        if (chars.length() <= index) {
+            while (chars.length() <= index) {
+                index -= 26;
+                bigChar += 1;
+            }
+            return chars.charAt(bigChar) + "" +  chars.charAt(index);
+        } else {
+            return "" + chars.charAt(index);
+        }
+    }
+
+    /**
+     * Clear all data centers.
+     */
     public void shutdown() {
         this.headers.clear();
         this.documents.clear();

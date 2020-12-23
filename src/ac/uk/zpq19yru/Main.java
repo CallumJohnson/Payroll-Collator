@@ -86,7 +86,8 @@ public class Main {
             grade.setNightRate(properties.getPropertyAsDouble(gradeId + "_nights"));
             grade.setOTA(properties.getPropertyAsDouble(gradeId + "_ota"));
             grade.setOTB(properties.getPropertyAsDouble(gradeId + "_otb"));
-            grade.setBonus(properties.getPropertyAsDouble(gradeId + "_bonus"));
+            // grade.setBonus(properties.getPropertyAsDouble(gradeId + "_bonus"));
+            grade.setTravel(properties.getPropertyAsDouble(gradeId + "_travel"));
             collator.addPaygrade(grade);
         }
 
@@ -154,7 +155,7 @@ public class Main {
         System.out.println("Outputting Data to the Output File!");
         try {
             collator.outputData();
-        } catch (WorkbookNotValidException | IOException | IllegalArgumentException e) {
+        } catch (WorkbookNotValidException | IllegalArgumentException e) {
             e.printStackTrace();
         }
 
